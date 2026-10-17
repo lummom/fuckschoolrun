@@ -18,17 +18,20 @@ jobs:
           path: ~/.gradle/caches
           key: gradle-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties') }}
 
-      # 固定 debug 签名：否则每次 runner 都新生成 keystore，百度 AK 绑的 SHA1 会失效
-      - name: Restore fixed debug keystore
+      # 固定签名：项目自带 signingConfigs.local 机制，只要 keystore 在 keystore/ 且给了密码
+      - name: Restore fixed signing keystore
         run: |
-          mkdir -p "$HOME/.android"
-          echo "${{ secrets.DEBUG_KEYSTORE_B64 }}" | base64 -d > "$HOME/.android/debug.keystore"
+          mkdir -p keystore
+          echo "${{ secrets.DEBUG_KEYSTORE_B64 }}" | base64 -d > keystore/SchoolRun.jks
 
       - run: chmod +x gradlew
       - name: Build debug APK
         run: ./gradlew assembleDebug --no-daemon
         env:
           MAPS_API_KEY: ${{ secrets.MAPS_API_KEY }}
+          KEYSTORE_STORE_PASSWORD: android
+          KEYSTORE_KEY_ALIAS: androiddebugkey
+          KEYSTORE_KEY_PASSWORD: android
 
       - uses: actions/upload-artifact@v4
         with:
