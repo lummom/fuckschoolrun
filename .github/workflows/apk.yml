@@ -17,8 +17,19 @@ jobs:
         with:
           path: ~/.gradle/caches
           key: gradle-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties') }}
+
+      # 固定 debug 签名：否则每次 runner 都新生成 keystore，百度 AK 绑的 SHA1 会失效
+      - name: Restore fixed debug keystore
+        run: |
+          mkdir -p "$HOME/.android"
+          echo "${{ secrets.DEBUG_KEYSTORE_B64 }}" | base64 -d > "$HOME/.android/debug.keystore"
+
       - run: chmod +x gradlew
-      - run: ./gradlew assembleDebug --no-daemon
+      - name: Build debug APK
+        run: ./gradlew assembleDebug --no-daemon
+        env:
+          MAPS_API_KEY: ${{ secrets.MAPS_API_KEY }}
+
       - uses: actions/upload-artifact@v4
         with:
           name: fuckschoolrun-debug-apk
